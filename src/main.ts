@@ -8,51 +8,75 @@ app.innerHTML = APP_NAME;
 
 
 const header = document.createElement("h1");
+
 const canvas = document.createElement("canvas")
-app.append(header)
-
-const ctx = canvas.getContext("2d");
-ctx.fillStyle = "green";
-
 canvas.width = 256
 canvas.height = 256;
 
 
-ctx?.fillRect(0,0,canvas.width,canvas.height)
-app.append(canvas)
+const button = document.createElement("button")
+button.id = "clearButton"
+button.innerHTML = "clear"
+
+
+
+const ctx = canvas.getContext("2d");
+
+
+
+app.append(header, canvas, button)
 
 const cursor = {active: false, x: 0, y:0};
+
+let lines: Array<Array<{x: number, y: number}>> = [];
+let currentLine: Array<{x: number, y: number}> = [];
 
 
 canvas.addEventListener("mousedown", (e) => {
     cursor.active = true;
     cursor.x = e.offsetX;
     cursor.y = e.offsetY;
+    currentLine = [{x: cursor.x, y: cursor.y}];
+    lines.push(currentLine);
 })
 
 canvas.addEventListener("mousemove", (e) => {
     if (cursor.active) {
-        ctx?.beginPath()
-        ctx?.moveTo(cursor.x, cursor.y)
-        ctx?.lineTo(e.offsetX,e.offsetY);
-        ctx?.stroke();
-        cursor.x = e.offsetX
+        const newPoint = {x: e.offsetX, y: e.offsetY};
+        currentLine.push(newPoint);
+
+        const event = new Event("drawing-changed");
+        canvas.dispatchEvent(event);
+
+        cursor.x = e.offsetX;
         cursor.y = e.offsetY;
 
     }
-})
+});
 
 canvas.addEventListener("mouseup", (e) => {
     cursor.active = false;
 })
 
-const button = document.createElement("button")
-button.id = "clearButton"
-button.innerHTML = "clear"
+canvas.addEventListener("drawing-changed", () => {
+    ctx?.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx?.beginPath();
+    lines.forEach((line) => {
+        ctx?.moveTo(line[0].x, line[0].y);
+        line.forEach((point) => {
+            ctx?.lineTo(point.x, point.y);
+        });
+    });
+    ctx?.stroke()
+
+
+});
+
 
 button.addEventListener("click", () => {
     ctx?.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "green";
+    lines = []
 })
 
 app.append(button)
