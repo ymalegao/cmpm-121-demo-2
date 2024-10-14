@@ -18,6 +18,15 @@ const button = document.createElement("button")
 button.id = "clearButton"
 button.innerHTML = "clear"
 
+const undoButton = document.createElement("button")
+undoButton.id = "undoButton"
+undoButton.innerHTML = "undo"
+
+const redoButton = document.createElement("button")
+redoButton.id = "redoButton"
+redoButton.innerHTML = "redo"
+
+
 
 
 const ctx = canvas.getContext("2d");
@@ -30,6 +39,9 @@ const cursor = {active: false, x: 0, y:0};
 
 let lines: Array<Array<{x: number, y: number}>> = [];
 let currentLine: Array<{x: number, y: number}> = [];
+let undoStack: Array<Array<{x: number, y: number}>> = [];
+let redoStack: Array<Array<{x: number, y: number}>> = [];
+
 
 
 canvas.addEventListener("mousedown", (e) => {
@@ -79,7 +91,24 @@ button.addEventListener("click", () => {
     lines = []
 })
 
-app.append(button)
+undoButton.addEventListener("click", () => {
+    if (lines.length > 0) {
+        undoStack.push(lines.pop());
+        redoStack = [];
+        const event = new Event("drawing-changed");
+        canvas.dispatchEvent(event);
+    }
+})
+
+redoButton.addEventListener("click", () => {
+    if (undoStack.length > 0) {
+        lines.push(undoStack.pop()!);
+        const event = new Event("drawing-changed");
+        canvas.dispatchEvent(event);
+    }
+})
+
+app.append(button, undoButton, redoButton)
 
 
 
