@@ -88,7 +88,9 @@ canvas.addEventListener("drawing-changed", () => {
 
 button.addEventListener("click", () => {
     ctx?.clearRect(0, 0, canvas.width, canvas.height);
-    lines = []
+    while (lines.length > 0) {
+        undoStack.push(lines.pop()!);
+    }
 })
 
 undoButton.addEventListener("click", () => {
