@@ -35,12 +35,44 @@ const ctx = canvas.getContext("2d");
 
 app.append(header, canvas, button)
 
-const cursor = {active: false, x: 0, y:0};
+//thse hold objects that have a 
+//display(ctx) method that accepts a 
+//context parameter 
+//(the same context from canvas.getContext("2d"))
+interface DrawObject {
+    display(ctx: CanvasRenderingContext2D): void;
+    drag(x: number, y: number): void;
+}
 
-let lines: Array<Array<{x: number, y: number}>> = [];
-let currentLine: Array<{x: number, y: number}> = [];
-let undoStack: Array<Array<{x: number, y: number}>> = [];
-let redoStack: Array<Array<{x: number, y: number}>> = [];
+function createLine(startX: number, startY: number): DrawObject {
+    let points: Array<{x: number, y: number}> = [{x: startX, y: startY}];
+
+    return {
+        drag(x:number, y:number) {
+            points.push({x, y});
+        },
+        display(ctx: CanvasRenderingContext2D) {
+            if (points.length === 0) return;
+            
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            points.forEach((point) => {
+                ctx.lineTo(point.x, point.y);
+            });
+            ctx.stroke();
+        }
+    }
+}
+
+
+
+
+const lines: Array<DrawObject> = [];
+let currentLine: DrawObject | null = null;
+const undoStack: Array<DrawObject> = [];
+let redoStack: Array<DrawObject> = [];
+
+const cursor = {active: false, x: 0, y:0};
 
 
 
@@ -48,39 +80,30 @@ canvas.addEventListener("mousedown", (e) => {
     cursor.active = true;
     cursor.x = e.offsetX;
     cursor.y = e.offsetY;
-    currentLine = [{x: cursor.x, y: cursor.y}];
+    currentLine = createLine(cursor.x, cursor.y);
     lines.push(currentLine);
 })
 
 canvas.addEventListener("mousemove", (e) => {
-    if (cursor.active) {
-        const newPoint = {x: e.offsetX, y: e.offsetY};
-        currentLine.push(newPoint);
-
+    if (cursor.active && currentLine) {
+        currentLine.drag(e.offsetX, e.offsetY);
         const event = new Event("drawing-changed");
         canvas.dispatchEvent(event);
-
-        cursor.x = e.offsetX;
-        cursor.y = e.offsetY;
 
     }
 });
 
-canvas.addEventListener("mouseup", (e) => {
+canvas.addEventListener("mouseup", () => {
     cursor.active = false;
+    currentLine = null;
 })
 
 canvas.addEventListener("drawing-changed", () => {
     ctx?.clearRect(0, 0, canvas.width, canvas.height);
 
-    ctx?.beginPath();
     lines.forEach((line) => {
-        ctx?.moveTo(line[0].x, line[0].y);
-        line.forEach((point) => {
-            ctx?.lineTo(point.x, point.y);
-        });
+        line.display(ctx!);
     });
-    ctx?.stroke()
 
 
 });
