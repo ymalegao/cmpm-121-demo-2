@@ -27,6 +27,23 @@ redoButton.id = "redoButton"
 redoButton.innerHTML = "redo"
 
 
+const thinMarker = document.createElement("button")
+thinMarker.id = "thinMarker"
+thinMarker.innerHTML = "thin marker"
+thinMarker.className = "marker"
+
+const thickMarker = document.createElement("button")
+thickMarker.id = "thickMarker"
+thickMarker.innerHTML = "thick marker"
+thickMarker.className = "marker"
+
+const thicknessDisplay = document.createElement("div")
+thicknessDisplay.id = "thicknessDisplay"
+thicknessDisplay.innerHTML = "1"
+
+
+
+
 
 
 const ctx = canvas.getContext("2d");
@@ -40,11 +57,28 @@ app.append(header, canvas, button)
 //context parameter 
 //(the same context from canvas.getContext("2d"))
 interface DrawObject {
+    
     display(ctx: CanvasRenderingContext2D): void;
     drag(x: number, y: number): void;
 }
 
-function createLine(startX: number, startY: number): DrawObject {
+interface ToolThickness{
+    thickness: number;
+}
+
+
+const lines: Array<DrawObject> = [];
+let currentLine: DrawObject | null = null;
+const undoStack: Array<DrawObject> = [];
+let redoStack: Array<DrawObject> = [];
+
+let currentTool : ToolThickness = {thickness: 1};
+
+const cursor = {active: false, x: 0, y:0};
+
+
+
+function createLine(startX: number, startY: number, thickness: number): DrawObject {
     let points: Array<{x: number, y: number}> = [{x: startX, y: startY}];
 
     return {
@@ -53,6 +87,8 @@ function createLine(startX: number, startY: number): DrawObject {
         },
         display(ctx: CanvasRenderingContext2D) {
             if (points.length === 0) return;
+            ctx.lineWidth = thickness;
+
             
             ctx.beginPath();
             ctx.moveTo(points[0].x, points[0].y);
@@ -64,15 +100,33 @@ function createLine(startX: number, startY: number): DrawObject {
     }
 }
 
+function setThickness(thickness: number){
+    currentTool.thickness = thickness;
+}
+
+function selectTool(selectedButton: HTMLButtonElement){
+    const buttons = document.querySelectorAll(".marker");
+    buttons.forEach((button) => {
+        button.classList.remove("selected");
+    });
+    selectedButton.classList.add("selected");
+}
+
+thinMarker.addEventListener("click", () => {
+    setThickness(1);
+    selectTool(thinMarker);
+})
+
+thickMarker.addEventListener("click", () => {
+    setThickness(5);
+    selectTool(thickMarker);
+})
 
 
 
-const lines: Array<DrawObject> = [];
-let currentLine: DrawObject | null = null;
-const undoStack: Array<DrawObject> = [];
-let redoStack: Array<DrawObject> = [];
 
-const cursor = {active: false, x: 0, y:0};
+
+
 
 
 
@@ -80,7 +134,7 @@ canvas.addEventListener("mousedown", (e) => {
     cursor.active = true;
     cursor.x = e.offsetX;
     cursor.y = e.offsetY;
-    currentLine = createLine(cursor.x, cursor.y);
+    currentLine = createLine(cursor.x, cursor.y, currentTool.thickness);
     lines.push(currentLine);
 })
 
@@ -133,7 +187,7 @@ redoButton.addEventListener("click", () => {
     }
 })
 
-app.append(button, undoButton, redoButton)
+app.append(button, undoButton, redoButton, thinMarker, thickMarker);
 
 
 
