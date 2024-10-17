@@ -111,3 +111,7 @@ button:focus-visible {
   background-color: #fe550d;
   color: #ffffff;
 }
+
+canvas {
+  cursor: none;
+}

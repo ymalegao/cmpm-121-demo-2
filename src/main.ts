@@ -37,13 +37,6 @@ thickMarker.id = "thickMarker"
 thickMarker.innerHTML = "thick marker"
 thickMarker.className = "marker"
 
-const thicknessDisplay = document.createElement("div")
-thicknessDisplay.id = "thicknessDisplay"
-thicknessDisplay.innerHTML = "1"
-
-
-
-
 
 
 const ctx = canvas.getContext("2d");
@@ -51,6 +44,9 @@ const ctx = canvas.getContext("2d");
 
 
 app.append(header, canvas, button)
+
+
+
 
 //thse hold objects that have a 
 //display(ctx) method that accepts a 
@@ -60,6 +56,10 @@ interface DrawObject {
     
     display(ctx: CanvasRenderingContext2D): void;
     drag(x: number, y: number): void;
+}
+
+interface ToolPreview{
+    draw(ctx: CanvasRenderingContext2D): void;
 }
 
 interface ToolThickness{
@@ -73,6 +73,11 @@ const undoStack: Array<DrawObject> = [];
 let redoStack: Array<DrawObject> = [];
 
 let currentTool : ToolThickness = {thickness: 1};
+
+let showPreview = true; // Flag to show or hide tool preview when drawing
+
+
+let toolPreview: ToolPreview | null = null;
 
 const cursor = {active: false, x: 0, y:0};
 
@@ -100,6 +105,20 @@ function createLine(startX: number, startY: number, thickness: number): DrawObje
     }
 }
 
+//craete a circle of radius thickness over the cursor 
+function createToolPreview(startX: number, startY: number, thickness: number): ToolPreview {
+    return {
+        draw(ctx: CanvasRenderingContext2D) {
+            ctx.beginPath();
+            ctx.arc(startX, startY, thickness/2, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+    }
+
+}
+
+ 
+
 function setThickness(thickness: number){
     currentTool.thickness = thickness;
 }
@@ -113,12 +132,12 @@ function selectTool(selectedButton: HTMLButtonElement){
 }
 
 thinMarker.addEventListener("click", () => {
-    setThickness(1);
+    setThickness(3);
     selectTool(thinMarker);
 })
 
 thickMarker.addEventListener("click", () => {
-    setThickness(5);
+    setThickness(9);
     selectTool(thickMarker);
 })
 
@@ -136,20 +155,32 @@ canvas.addEventListener("mousedown", (e) => {
     cursor.y = e.offsetY;
     currentLine = createLine(cursor.x, cursor.y, currentTool.thickness);
     lines.push(currentLine);
+    showPreview = false;
 })
 
 canvas.addEventListener("mousemove", (e) => {
     if (cursor.active && currentLine) {
         currentLine.drag(e.offsetX, e.offsetY);
-        const event = new Event("drawing-changed");
-        canvas.dispatchEvent(event);
-
     }
+    cursor.x = e.offsetX;
+    cursor.y = e.offsetY;
+
+    if (!cursor.active) {
+        
+        toolPreview = createToolPreview(cursor.x, cursor.y, currentTool.thickness);
+        showPreview = true;
+    }
+    const event = new Event("drawing-changed");
+    canvas.dispatchEvent(event);
+
 });
+
+
 
 canvas.addEventListener("mouseup", () => {
     cursor.active = false;
     currentLine = null;
+    showPreview = true;
 })
 
 canvas.addEventListener("drawing-changed", () => {
@@ -159,8 +190,13 @@ canvas.addEventListener("drawing-changed", () => {
         line.display(ctx!);
     });
 
+    if (toolPreview && showPreview) {
+        toolPreview.draw(ctx!);
+    }
+
 
 });
+
 
 
 button.addEventListener("click", () => {
