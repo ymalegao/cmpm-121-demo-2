@@ -27,6 +27,13 @@ redoButton.id = "redoButton"
 redoButton.innerHTML = "redo"
 
 
+const thinMarkerThickness = 3;
+const thickMarkerThickness = 9;
+const sticker1Sticker = "❌";
+const sticker2Sticker = "💯";
+const sticker3Sticker = "❤️‍🔥";
+
+
 const thinMarker = document.createElement("button")
 thinMarker.id = "thinMarker"
 thinMarker.innerHTML = "thin marker"
@@ -38,13 +45,17 @@ thickMarker.innerHTML = "thick marker"
 thickMarker.className = "marker"
 
 const sticker1 = document.createElement("button");
-sticker1.innerHTML = "🐱";
+sticker1.innerHTML = sticker1Sticker
+sticker1.className = "marker" 
+
 
 const sticker2 = document.createElement("button");
-sticker2.innerHTML = "🌟";
+sticker2.innerHTML = sticker2Sticker
+sticker2.className = "marker"
 
 const sticker3 = document.createElement("button");
-sticker3.innerHTML = "🍀";
+sticker3.innerHTML = sticker3Sticker
+sticker3.className = "marker"
 
 
 
@@ -71,6 +82,20 @@ interface ToolPreview{
     draw(ctx: CanvasRenderingContext2D): void;
 }
 
+interface Tool {
+    type: "marker" | "sticker";
+  }
+  
+  interface MarkerTool extends Tool {
+    type: "marker";
+    thickness: number;
+  }
+  
+  interface StickerTool extends Tool {
+    type: "sticker";
+    sticker: string;
+  }
+
 interface ToolThickness{
     thickness: number;
 }
@@ -79,22 +104,24 @@ interface ToolThickness{
 const lines: Array<DrawObject> = [];
 let currentLine: DrawObject | null = null;
 const undoStack: Array<DrawObject> = [];
-let redoStack: Array<DrawObject> = [];
+// let redoStack: Array<DrawObject> = [];
 
-let currentTool : ToolThickness = {thickness: 1};
+let currentTool: Tool = { type: "marker", thickness: thickMarkerThickness };
 
 let showPreview = true; // Flag to show or hide tool preview when drawing
 
 
 let toolPreview: ToolPreview | null = null;
-let currentSticker: string | null = null;
 
 const cursor = {active: false, x: 0, y:0};
+
+let mouseIsDown = false;
+
 
 
 
 function createLine(startX: number, startY: number, thickness: number): DrawObject {
-    let points: Array<{x: number, y: number}> = [{x: startX, y: startY}];
+    const points: Array<{x: number, y: number}> = [{x: startX, y: startY}];
 
     return {
         drag(x:number, y:number) {
@@ -119,10 +146,7 @@ function createLine(startX: number, startY: number, thickness: number): DrawObje
 
 //craete a circle of radius thickness over the cursor 
 function createToolPreview(
-    x: number,
-    y: number,
-    thickness: number
-  ): ToolPreview {
+    x: number, y: number, thickness: number): ToolPreview {
     return {
       draw(ctx: CanvasRenderingContext2D) {
         ctx.beginPath();
@@ -131,6 +155,36 @@ function createToolPreview(
       },
     };
   }
+
+
+function createStickerPreview(x: number,y: number, sticker: string): ToolPreview {
+    return {
+      draw(ctx: CanvasRenderingContext2D) {
+        ctx.font = "24px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(sticker, x, y);
+      },
+    };
+}
+
+
+
+
+function createSticker(startX: number,startY: number,sticker: string): DrawObject {
+    let x = startX;
+    let y = startY;
+    
+    return {
+        drag(newX: number, newY: number) {
+        x = newX;
+        y = newY;
+        },
+        display(ctx: CanvasRenderingContext2D) {
+        ctx.fillText(sticker, x, y);
+        },
+    };
+    }
 
  
 
@@ -147,15 +201,32 @@ function selectTool(selectedButton: HTMLButtonElement){
 }
 
 thinMarker.addEventListener("click", () => {
+    currentTool = { type: "marker", thickness: 4 };
+
     setThickness(3);
     selectTool(thinMarker);
 })
 
 thickMarker.addEventListener("click", () => {
+    currentTool = { type: "marker", thickness: 9 };
     setThickness(9);
     selectTool(thickMarker);
 })
 
+sticker1.addEventListener("click", () => {
+    currentTool = { type: "sticker", sticker: "🐱" };
+    selectTool(sticker1);
+  });
+  
+  sticker2.addEventListener("click", () => {
+    currentTool = { type: "sticker", sticker: "🌟" };
+    selectTool(sticker2);
+  });
+  
+  sticker3.addEventListener("click", () => {
+    currentTool = { type: "sticker", sticker: "🍀" };
+    selectTool(sticker3);
+  });
 
 
 
@@ -164,20 +235,29 @@ thickMarker.addEventListener("click", () => {
 
 
 
-canvas.addEventListener("mousedown", (e) => {
-    cursor.active = true;
-    cursor.x = e.offsetX;
-    cursor.y = e.offsetY;
-    currentLine = createLine(cursor.x, cursor.y, currentTool.thickness);
-    lines.push(currentLine);
-    showPreview = false;
-})
+
+  canvas.addEventListener("mousedown", (e) => {
+    mouseIsDown = true;
+    const x = e.offsetX;
+    const y = e.offsetY;
+    if (currentTool.type === "marker") {
+      const markerTool = currentTool as MarkerTool;
+      currentLine = createLine(x, y, markerTool.thickness);
+      lines.push(currentLine);
+      showPreview = false;
+    } else if (currentTool.type === "sticker") {
+      const stickerTool = currentTool as StickerTool;
+      currentLine = createSticker(x, y, stickerTool.sticker);
+      lines.push(currentLine);
+      showPreview = false;
+    }
+  });
 
 canvas.addEventListener("mousemove", (e) => {
     const x = e.offsetX;
     const y = e.offsetY;
   
-    if (cursor.active && currentLine) {
+    if (mouseIsDown && currentLine) {
       currentLine.drag(x, y);
       const drawingChangedEvent = new Event("drawing-changed");
       canvas.dispatchEvent(drawingChangedEvent);
@@ -193,18 +273,26 @@ canvas.addEventListener("mousemove", (e) => {
 
 canvas.addEventListener("mouseup", () => {
     cursor.active = false;
+    mouseIsDown = false;
+
     currentLine = null;
     showPreview = true;
 })
 
 canvas.addEventListener("tool-moved", (e) => {
     const { x, y } = (e as CustomEvent).detail;
-    toolPreview = createToolPreview(x, y, currentTool.thickness);
-    showPreview = true;
-  
-    const drawingChangedEvent = new Event("drawing-changed");
-    canvas.dispatchEvent(drawingChangedEvent);
-  });
+  if (currentTool.type === "marker") {
+    const markerTool = currentTool as MarkerTool;
+    toolPreview = createToolPreview(x, y, markerTool.thickness);
+  } else if (currentTool.type === "sticker") {
+    const stickerTool = currentTool as StickerTool;
+    toolPreview = createStickerPreview(x, y, stickerTool.sticker);
+  }
+  showPreview = true;
+
+  const drawingChangedEvent = new Event("drawing-changed");
+  canvas.dispatchEvent(drawingChangedEvent);
+});
 
 canvas.addEventListener("drawing-changed", () => {
     ctx?.clearRect(0, 0, canvas.width, canvas.height);
@@ -246,7 +334,7 @@ redoButton.addEventListener("click", () => {
     }
 })
 
-app.append(button, undoButton, redoButton, thinMarker, thickMarker);
+app.append(button, undoButton, redoButton, thinMarker, thickMarker, sticker1, sticker2, sticker3);
 
 
 
