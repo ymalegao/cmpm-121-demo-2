@@ -104,7 +104,6 @@ interface ToolThickness{
 const lines: Array<DrawObject> = [];
 let currentLine: DrawObject | null = null;
 const undoStack: Array<DrawObject> = [];
-// let redoStack: Array<DrawObject> = [];
 
 let currentTool: Tool = { type: "marker", thickness: thickMarkerThickness };
 
@@ -160,9 +159,6 @@ function createToolPreview(
 function createStickerPreview(x: number,y: number, sticker: string): ToolPreview {
     return {
       draw(ctx: CanvasRenderingContext2D) {
-        ctx.font = "24px sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
         ctx.fillText(sticker, x, y);
       },
     };
@@ -201,30 +197,30 @@ function selectTool(selectedButton: HTMLButtonElement){
 }
 
 thinMarker.addEventListener("click", () => {
-    currentTool = { type: "marker", thickness: 4 };
+    currentTool = { type: "marker", thickness: thinMarkerThickness };
 
     setThickness(3);
     selectTool(thinMarker);
 })
 
 thickMarker.addEventListener("click", () => {
-    currentTool = { type: "marker", thickness: 9 };
+    currentTool = { type: "marker", thickness: thickMarkerThickness };
     setThickness(9);
     selectTool(thickMarker);
 })
 
 sticker1.addEventListener("click", () => {
-    currentTool = { type: "sticker", sticker: "🐱" };
+    currentTool = { type: "sticker", sticker: sticker1Sticker };
     selectTool(sticker1);
   });
   
   sticker2.addEventListener("click", () => {
-    currentTool = { type: "sticker", sticker: "🌟" };
+    currentTool = { type: "sticker", sticker: sticker2Sticker };
     selectTool(sticker2);
   });
   
   sticker3.addEventListener("click", () => {
-    currentTool = { type: "sticker", sticker: "🍀" };
+    currentTool = { type: "sticker", sticker: sticker3Sticker };
     selectTool(sticker3);
   });
 
@@ -236,7 +232,7 @@ sticker1.addEventListener("click", () => {
 
 
 
-  canvas.addEventListener("mousedown", (e) => {
+canvas.addEventListener("mousedown", (e) => {
     mouseIsDown = true;
     const x = e.offsetX;
     const y = e.offsetY;
@@ -320,7 +316,6 @@ button.addEventListener("click", () => {
 undoButton.addEventListener("click", () => {
     if (lines.length > 0) {
         undoStack.push(lines.pop());
-        redoStack = [];
         const event = new Event("drawing-changed");
         canvas.dispatchEvent(event);
     }
