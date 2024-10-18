@@ -37,6 +37,15 @@ thickMarker.id = "thickMarker"
 thickMarker.innerHTML = "thick marker"
 thickMarker.className = "marker"
 
+const sticker1 = document.createElement("button");
+sticker1.innerHTML = "🐱";
+
+const sticker2 = document.createElement("button");
+sticker2.innerHTML = "🌟";
+
+const sticker3 = document.createElement("button");
+sticker3.innerHTML = "🍀";
+
 
 
 const ctx = canvas.getContext("2d");
@@ -78,6 +87,7 @@ let showPreview = true; // Flag to show or hide tool preview when drawing
 
 
 let toolPreview: ToolPreview | null = null;
+let currentSticker: string | null = null;
 
 const cursor = {active: false, x: 0, y:0};
 
@@ -105,17 +115,22 @@ function createLine(startX: number, startY: number, thickness: number): DrawObje
     }
 }
 
-//craete a circle of radius thickness over the cursor 
-function createToolPreview(startX: number, startY: number, thickness: number): ToolPreview {
-    return {
-        draw(ctx: CanvasRenderingContext2D) {
-            ctx.beginPath();
-            ctx.arc(startX, startY, thickness/2, 0, 2 * Math.PI);
-            ctx.fill();
-        }
-    }
 
-}
+
+//craete a circle of radius thickness over the cursor 
+function createToolPreview(
+    x: number,
+    y: number,
+    thickness: number
+  ): ToolPreview {
+    return {
+      draw(ctx: CanvasRenderingContext2D) {
+        ctx.beginPath();
+        ctx.arc(x, y, thickness / 2, 0, 2 * Math.PI);
+        ctx.fill();
+      },
+    };
+  }
 
  
 
@@ -159,21 +174,20 @@ canvas.addEventListener("mousedown", (e) => {
 })
 
 canvas.addEventListener("mousemove", (e) => {
+    const x = e.offsetX;
+    const y = e.offsetY;
+  
     if (cursor.active && currentLine) {
-        currentLine.drag(e.offsetX, e.offsetY);
+      currentLine.drag(x, y);
+      const drawingChangedEvent = new Event("drawing-changed");
+      canvas.dispatchEvent(drawingChangedEvent);
+    } else {
+      const toolMovedEvent = new CustomEvent("tool-moved", {
+        detail: { x, y },
+      });
+      canvas.dispatchEvent(toolMovedEvent);
     }
-    cursor.x = e.offsetX;
-    cursor.y = e.offsetY;
-
-    if (!cursor.active) {
-        
-        toolPreview = createToolPreview(cursor.x, cursor.y, currentTool.thickness);
-        showPreview = true;
-    }
-    const event = new Event("drawing-changed");
-    canvas.dispatchEvent(event);
-
-});
+  });
 
 
 
@@ -182,6 +196,15 @@ canvas.addEventListener("mouseup", () => {
     currentLine = null;
     showPreview = true;
 })
+
+canvas.addEventListener("tool-moved", (e) => {
+    const { x, y } = (e as CustomEvent).detail;
+    toolPreview = createToolPreview(x, y, currentTool.thickness);
+    showPreview = true;
+  
+    const drawingChangedEvent = new Event("drawing-changed");
+    canvas.dispatchEvent(drawingChangedEvent);
+  });
 
 canvas.addEventListener("drawing-changed", () => {
     ctx?.clearRect(0, 0, canvas.width, canvas.height);
