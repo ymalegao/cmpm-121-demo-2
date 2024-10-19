@@ -34,14 +34,29 @@ const thinMarkerThickness = 3;
 const thickMarkerThickness = 9;
 
 const availableStickers : Array<string> = ["❌", "👍", "👎"];
+const container = document.createElement("div");
+container.className = "container";
 
 const colorPicker = document.createElement("input");
 colorPicker.type = "color";
 colorPicker.id = "colorPicker";
+colorPicker.className = "color-picker";
 colorPicker.value = "#000000";
-app.appendChild(colorPicker);
+container.appendChild(colorPicker);
 
+const sliderDiv = document.createElement("div");
+sliderDiv.className = "slider-container";
+const slider = document.createElement("input");
+slider.type = "range";
+slider.min = "0";
+slider.max = "360";
+slider.value = "0"; 
+slider.id = "toolPropertySlider";
+slider.className = "slider";
+sliderDiv.appendChild(slider);
+container.appendChild(sliderDiv);
 
+app.appendChild(container);
 
 availableStickers.forEach((stickerPrompt) => {
     const stickerButton = document.createElement("button");
@@ -127,6 +142,8 @@ let mouseIsDown = false;
 
 let currentColor = "#000000";
 
+let currentRotation = 0;
+
 
 
 
@@ -168,10 +185,14 @@ function createToolPreview(
   }
 
 
-function createStickerPreview(x: number,y: number, sticker: string): ToolPreview {
+function createStickerPreview(x: number,y: number, sticker: string, rotation:number): ToolPreview {
     return {
       draw(ctx: CanvasRenderingContext2D) {
-        ctx.fillText(sticker, x, y);
+            ctx.save();
+            ctx.translate(x, y); // Move to sticker position
+            ctx.rotate((rotation * Math.PI) / 180); // Rotate the sticker preview
+            ctx.fillText(sticker, 0, 0);
+            ctx.restore();
       },
     };
 }
@@ -179,7 +200,7 @@ function createStickerPreview(x: number,y: number, sticker: string): ToolPreview
 
 
 
-function createSticker(startX: number,startY: number,sticker: string): DrawObject {
+function createSticker(startX: number,startY: number,sticker: string, rotation:number): DrawObject {
     let x = startX;
     let y = startY;
     
@@ -189,7 +210,11 @@ function createSticker(startX: number,startY: number,sticker: string): DrawObjec
         y = newY;
         },
         display(ctx: CanvasRenderingContext2D) {
-        ctx.fillText(sticker, x, y);
+            ctx.save(); // Save the current canvas state
+            ctx.translate(x, y); // Move to sticker position
+            ctx.rotate((rotation * Math.PI) / 180); // Rotate based on the slider value
+            ctx.fillText(sticker, 0, 0); // Draw the sticker at the origin after rotation
+            ctx.restore(); // Restore the canvas state to prevent rotating other elements
         },
     };
     }
@@ -275,7 +300,7 @@ canvas.addEventListener("mousedown", (e) => {
       showPreview = false;
     } else if (currentTool.type === "sticker") {
       const stickerTool = currentTool as StickerTool;
-      currentLine = createSticker(x, y, stickerTool.sticker);
+      currentLine = createSticker(x, y, stickerTool.sticker, currentRotation);
       lines.push(currentLine);
       showPreview = false;
     }
@@ -314,7 +339,7 @@ canvas.addEventListener("tool-moved", (e) => {
     toolPreview = createToolPreview(x, y, markerTool.thickness, currentColor);
   } else if (currentTool.type === "sticker") {
     const stickerTool = currentTool as StickerTool;
-    toolPreview = createStickerPreview(x, y, stickerTool.sticker);
+    toolPreview = createStickerPreview(x, y, stickerTool.sticker, currentRotation);
   }
   showPreview = true;
 
@@ -377,6 +402,17 @@ exportButton.addEventListener("click", () => {
     link.download = "drawing.png";
     link.click();
 
+});
+
+slider.addEventListener("input", (e) => {
+    const sliderValue = parseInt((e.target as HTMLInputElement).value, 10);
+
+    if (currentTool.type === "marker") {
+        const hue = sliderValue; 
+        currentColor = `hsl(${hue}, 100%, 50%)`; 
+    } else if (currentTool.type === "sticker") {
+        currentRotation = sliderValue;
+    }
 });
 
 app.append(button, undoButton, redoButton, thinMarker, thickMarker, triggerStickerPrompt, exportButton);
