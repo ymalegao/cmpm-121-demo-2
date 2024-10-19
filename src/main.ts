@@ -1,10 +1,9 @@
 import "./style.css";
 
-const APP_NAME = "upfated";
+const APP_NAME = "Canvas";
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
 document.title = APP_NAME;
-app.innerHTML = APP_NAME;
 
 
 const header = document.createElement("h1");
@@ -26,23 +25,28 @@ const redoButton = document.createElement("button")
 redoButton.id = "redoButton"
 redoButton.innerHTML = "redo"
 
+const stickerContainer = document.createElement("div");
+stickerContainer.id = "sticker-container";
+app.appendChild(stickerContainer);
+
 
 const thinMarkerThickness = 3;
 const thickMarkerThickness = 9;
 
 const availableStickers : Array<string> = ["❌", "👍", "👎"];
 
+
 availableStickers.forEach((stickerPrompt) => {
     const stickerButton = document.createElement("button");
-        stickerButton.innerHTML = stickerPrompt;
-        stickerButton.className = "sticker";
-        stickerButton.classList.add("marker");
-        stickerButton.addEventListener("click", () => {
-            currentTool = { type: "sticker", sticker: stickerPrompt };
-            selectTool(stickerButton);
-        });
-        app.append(stickerButton);
+    stickerButton.innerHTML = stickerPrompt;
+    stickerButton.className = "sticker";
+    stickerButton.classList.add("marker");
+    stickerButton.addEventListener("click", () => {
+        currentTool = { type: "sticker", sticker: stickerPrompt };
+        selectTool(stickerButton);
     });
+    stickerContainer.append(stickerButton);
+});
 
 
 const thinMarker = document.createElement("button")
@@ -236,7 +240,7 @@ function addStickerButtons(stickerPrompt: string) {
         currentTool = { type: "sticker", sticker: stickerPrompt };
         selectTool(stickerButton);
     });
-    app.append(stickerButton);
+    stickerContainer.append(stickerButton);
 }
 
 
