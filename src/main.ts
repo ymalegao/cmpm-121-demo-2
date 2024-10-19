@@ -29,9 +29,8 @@ redoButton.innerHTML = "redo"
 
 const thinMarkerThickness = 3;
 const thickMarkerThickness = 9;
-const sticker1Sticker = "❌";
-const sticker2Sticker = "💯";
-const sticker3Sticker = "❤️‍🔥";
+
+const availableStickers : Array<string> = [];
 
 
 const thinMarker = document.createElement("button")
@@ -44,18 +43,17 @@ thickMarker.id = "thickMarker"
 thickMarker.innerHTML = "thick marker"
 thickMarker.className = "marker"
 
-const sticker1 = document.createElement("button");
-sticker1.innerHTML = sticker1Sticker
-sticker1.className = "marker" 
+const triggerStickerPrompt = document.createElement("button")
+triggerStickerPrompt.id = "triggerStickerPrompt"
+triggerStickerPrompt.innerHTML = "add sticker"
+triggerStickerPrompt.className = "marker"
 
+ 
 
-const sticker2 = document.createElement("button");
-sticker2.innerHTML = sticker2Sticker
-sticker2.className = "marker"
-
-const sticker3 = document.createElement("button");
-sticker3.innerHTML = sticker3Sticker
-sticker3.className = "marker"
+availableStickers.forEach(e => {
+    console.log(e);
+    
+});
 
 
 
@@ -63,7 +61,7 @@ const ctx = canvas.getContext("2d");
 
 
 
-app.append(header, canvas, button)
+app.append(header, canvas, button )
 
 
 
@@ -96,18 +94,15 @@ interface Tool {
     sticker: string;
   }
 
-interface ToolThickness{
-    thickness: number;
-}
 
 
 const lines: Array<DrawObject> = [];
 let currentLine: DrawObject | null = null;
 const undoStack: Array<DrawObject> = [];
 
-let currentTool: Tool = { type: "marker", thickness: thickMarkerThickness };
+let currentTool: MarkerTool | StickerTool = { type: "marker", thickness: thickMarkerThickness };
 
-let showPreview = true; // Flag to show or hide tool preview when drawing
+let showPreview = true; 
 
 
 let toolPreview: ToolPreview | null = null;
@@ -143,7 +138,6 @@ function createLine(startX: number, startY: number, thickness: number): DrawObje
 
 
 
-//craete a circle of radius thickness over the cursor 
 function createToolPreview(
     x: number, y: number, thickness: number): ToolPreview {
     return {
@@ -185,7 +179,10 @@ function createSticker(startX: number,startY: number,sticker: string): DrawObjec
  
 
 function setThickness(thickness: number){
-    currentTool.thickness = thickness;
+    if (currentTool.type === "marker"){
+        const currentMarker = currentTool as MarkerTool;
+        currentMarker.thickness = thickness;
+    }
 }
 
 function selectTool(selectedButton: HTMLButtonElement){
@@ -209,20 +206,40 @@ thickMarker.addEventListener("click", () => {
     selectTool(thickMarker);
 })
 
-sticker1.addEventListener("click", () => {
-    currentTool = { type: "sticker", sticker: sticker1Sticker };
-    selectTool(sticker1);
-  });
-  
-  sticker2.addEventListener("click", () => {
-    currentTool = { type: "sticker", sticker: sticker2Sticker };
-    selectTool(sticker2);
-  });
-  
-  sticker3.addEventListener("click", () => {
-    currentTool = { type: "sticker", sticker: sticker3Sticker };
-    selectTool(sticker3);
-  });
+
+
+triggerStickerPrompt.addEventListener("click", () => {
+    const stickerPrompt = prompt("Enter a sticker", "❌");
+    if (stickerPrompt) {
+        if (availableStickers.includes(stickerPrompt)){
+            alert("sticker already exists");
+            return;
+        } else {
+            availableStickers.push(stickerPrompt);
+            addStickerButtons(stickerPrompt);
+        }
+    }
+
+    
+});
+
+function addStickerButtons(stickerPrompt: string) {
+    
+    const stickerButton = document.createElement("button");
+    stickerButton.innerHTML = stickerPrompt;
+    stickerButton.className = "sticker";
+    stickerButton.classList.add("marker");
+    stickerButton.addEventListener("click", () => {
+        currentTool = { type: "sticker", sticker: stickerPrompt };
+        selectTool(stickerButton);
+    });
+    app.append(stickerButton);
+
+    
+
+    
+
+}
 
 
 
@@ -329,7 +346,7 @@ redoButton.addEventListener("click", () => {
     }
 })
 
-app.append(button, undoButton, redoButton, thinMarker, thickMarker, sticker1, sticker2, sticker3);
+app.append(button, undoButton, redoButton, thinMarker, thickMarker, triggerStickerPrompt);
 
 
 
