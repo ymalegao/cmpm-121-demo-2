@@ -30,7 +30,19 @@ redoButton.innerHTML = "redo"
 const thinMarkerThickness = 3;
 const thickMarkerThickness = 9;
 
-const availableStickers : Array<string> = [];
+const availableStickers : Array<string> = ["❌", "👍", "👎"];
+
+availableStickers.forEach((stickerPrompt) => {
+    const stickerButton = document.createElement("button");
+        stickerButton.innerHTML = stickerPrompt;
+        stickerButton.className = "sticker";
+        stickerButton.classList.add("marker");
+        stickerButton.addEventListener("click", () => {
+            currentTool = { type: "sticker", sticker: stickerPrompt };
+            selectTool(stickerButton);
+        });
+        app.append(stickerButton);
+    });
 
 
 const thinMarker = document.createElement("button")
@@ -48,13 +60,9 @@ triggerStickerPrompt.id = "triggerStickerPrompt"
 triggerStickerPrompt.innerHTML = "add sticker"
 triggerStickerPrompt.className = "marker"
 
- 
-
-availableStickers.forEach(e => {
-    console.log(e);
-    
-});
-
+const exportButton = document.createElement("button")
+exportButton.id = "exportButton"
+exportButton.innerHTML = "export"
 
 
 const ctx = canvas.getContext("2d");
@@ -65,11 +73,6 @@ app.append(header, canvas, button )
 
 
 
-
-//thse hold objects that have a 
-//display(ctx) method that accepts a 
-//context parameter 
-//(the same context from canvas.getContext("2d"))
 interface DrawObject {
     
     display(ctx: CanvasRenderingContext2D): void;
@@ -84,15 +87,15 @@ interface Tool {
     type: "marker" | "sticker";
   }
   
-  interface MarkerTool extends Tool {
-    type: "marker";
-    thickness: number;
-  }
-  
-  interface StickerTool extends Tool {
-    type: "sticker";
-    sticker: string;
-  }
+interface MarkerTool extends Tool {
+type: "marker";
+thickness: number;
+}
+
+interface StickerTool extends Tool {
+type: "sticker";
+sticker: string;
+}
 
 
 
@@ -234,11 +237,6 @@ function addStickerButtons(stickerPrompt: string) {
         selectTool(stickerButton);
     });
     app.append(stickerButton);
-
-    
-
-    
-
 }
 
 
@@ -346,7 +344,25 @@ redoButton.addEventListener("click", () => {
     }
 })
 
-app.append(button, undoButton, redoButton, thinMarker, thickMarker, triggerStickerPrompt);
+exportButton.addEventListener("click", () => {
+
+    let tempCanvas = document.createElement("canvas")
+    tempCanvas.width = 1024
+    tempCanvas.height = 1024;
+    let tempCtx = tempCanvas.getContext("2d");
+    tempCtx?.scale(4,4);
+    tempCtx?.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+    lines.forEach((line) => {
+        line.display(tempCtx!);
+    });
+    const link = document.createElement("a");
+    link.href = tempCanvas.toDataURL("image/png");
+    link.download = "drawing.png";
+    link.click();
+
+});
+
+app.append(button, undoButton, redoButton, thinMarker, thickMarker, triggerStickerPrompt, exportButton);
 
 
 
