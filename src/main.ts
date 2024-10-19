@@ -35,6 +35,13 @@ const thickMarkerThickness = 9;
 
 const availableStickers : Array<string> = ["❌", "👍", "👎"];
 
+const colorPicker = document.createElement("input");
+colorPicker.type = "color";
+colorPicker.id = "colorPicker";
+colorPicker.value = "#000000";
+app.appendChild(colorPicker);
+
+
 
 availableStickers.forEach((stickerPrompt) => {
     const stickerButton = document.createElement("button");
@@ -118,10 +125,12 @@ const cursor = {active: false, x: 0, y:0};
 
 let mouseIsDown = false;
 
+let currentColor = "#000000";
 
 
 
-function createLine(startX: number, startY: number, thickness: number): DrawObject {
+
+function createLine(startX: number, startY: number, thickness: number, color: string): DrawObject {
     const points: Array<{x: number, y: number}> = [{x: startX, y: startY}];
 
     return {
@@ -131,6 +140,7 @@ function createLine(startX: number, startY: number, thickness: number): DrawObje
         display(ctx: CanvasRenderingContext2D) {
             if (points.length === 0) return;
             ctx.lineWidth = thickness;
+            ctx.strokeStyle = color;
 
             
             ctx.beginPath();
@@ -146,11 +156,12 @@ function createLine(startX: number, startY: number, thickness: number): DrawObje
 
 
 function createToolPreview(
-    x: number, y: number, thickness: number): ToolPreview {
+    x: number, y: number, thickness: number, color:string): ToolPreview {
     return {
       draw(ctx: CanvasRenderingContext2D) {
         ctx.beginPath();
         ctx.arc(x, y, thickness / 2, 0, 2 * Math.PI);
+        ctx.fillStyle = color;
         ctx.fill();
       },
     };
@@ -248,7 +259,9 @@ function addStickerButtons(stickerPrompt: string) {
 
 
 
-
+colorPicker.addEventListener("input", (e) => {
+    currentColor = (e.target as HTMLInputElement).value;
+});
 
 
 canvas.addEventListener("mousedown", (e) => {
@@ -257,7 +270,7 @@ canvas.addEventListener("mousedown", (e) => {
     const y = e.offsetY;
     if (currentTool.type === "marker") {
       const markerTool = currentTool as MarkerTool;
-      currentLine = createLine(x, y, markerTool.thickness);
+      currentLine = createLine(x, y, markerTool.thickness, currentColor);
       lines.push(currentLine);
       showPreview = false;
     } else if (currentTool.type === "sticker") {
@@ -298,7 +311,7 @@ canvas.addEventListener("tool-moved", (e) => {
     const { x, y } = (e as CustomEvent).detail;
   if (currentTool.type === "marker") {
     const markerTool = currentTool as MarkerTool;
-    toolPreview = createToolPreview(x, y, markerTool.thickness);
+    toolPreview = createToolPreview(x, y, markerTool.thickness, currentColor);
   } else if (currentTool.type === "sticker") {
     const stickerTool = currentTool as StickerTool;
     toolPreview = createStickerPreview(x, y, stickerTool.sticker);
