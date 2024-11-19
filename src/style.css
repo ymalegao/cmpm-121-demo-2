@@ -1,10 +1,10 @@
 :root {
-  --primary-bg: #f4f4f4;
-  --canvas-border: #333;
+  --primary-bg: #333;
+  --canvas-border: #100;
   --button-bg: #2196F3;
   --button-hover-bg: #1E88E5;
   --button-active-bg: #1565C0;
-  --button-text: #ffffff;
+  --button-text: #333;
   --selected-bg: #FF7043;
   --undo-redo-bg: #FFCA28;
 }
@@ -23,7 +23,7 @@ body {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  background-color: #ffffff;
+  background-color: #333;
   border: 2px solid var(--canvas-border);
   justify-content: space-between; 
   padding: 150px;
