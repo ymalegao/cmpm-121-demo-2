@@ -5,6 +5,31 @@ const app = document.querySelector<HTMLDivElement>("#app")!;
 
 document.title = APP_NAME;
 
+// Utility Functions
+function createButton(id: string, label: string, className?: string, onClick?: () => void): HTMLButtonElement {
+    const button = document.createElement("button");
+    button.id = id;
+    button.innerHTML = label;
+    if (className) button.className = className;
+    if (onClick) button.addEventListener("click", onClick);
+    return button;
+}
+
+function createInput(type: string, id: string, className?: string, value?: string): HTMLInputElement {
+    const input = document.createElement("input");
+    input.type = type;
+    input.id = id;
+    if (className) input.className = className;
+    if (value) input.value = value;
+    return input;
+}
+
+function createDiv(id: string, className?: string): HTMLDivElement {
+    const div = document.createElement("div");
+    div.id = id;
+    if (className) div.className = className;
+    return div;
+}
 
 const header = document.createElement("h1");
 
@@ -13,22 +38,12 @@ canvas.width = 256
 canvas.height = 256;
 
 
-const button = document.createElement("button")
-button.id = "clearButton"
-button.innerHTML = "clear"
+const button = createButton("clearButton", "clear");
+const undoButton = createButton("undoButton", "undo");
+const redoButton = createButton("redoButton", "redo");
 
-const undoButton = document.createElement("button")
-undoButton.id = "undoButton"
-undoButton.innerHTML = "undo"
-
-const redoButton = document.createElement("button")
-redoButton.id = "redoButton"
-redoButton.innerHTML = "redo"
-
-const stickerContainer = document.createElement("div");
-stickerContainer.id = "sticker-container";
+const stickerContainer = createDiv("sticker-container");
 app.appendChild(stickerContainer);
-
 
 const thinMarkerThickness = 3;
 const thickMarkerThickness = 9;
@@ -37,22 +52,14 @@ const availableStickers : Array<string> = ["❌", "👍", "👎"];
 const container = document.createElement("div");
 container.className = "container";
 
-const colorPicker = document.createElement("input");
-colorPicker.type = "color";
-colorPicker.id = "colorPicker";
-colorPicker.className = "color-picker";
-colorPicker.value = "#000000";
+const colorPicker = createInput("color", "colorPicker", "color-picker", "#000000");
 container.appendChild(colorPicker);
 
 const sliderDiv = document.createElement("div");
 sliderDiv.className = "slider-container";
-const slider = document.createElement("input");
-slider.type = "range";
+const slider = createInput("range", "toolPropertySlider", "slider", "0");
 slider.min = "0";
 slider.max = "360";
-slider.value = "0"; 
-slider.id = "toolPropertySlider";
-slider.className = "slider";
 sliderDiv.appendChild(slider);
 container.appendChild(sliderDiv);
 
@@ -133,7 +140,6 @@ let currentTool: MarkerTool | StickerTool = { type: "marker", thickness: thickMa
 
 let showPreview = true; 
 
-
 let toolPreview: ToolPreview | null = null;
 
 const cursor = {active: false, x: 0, y:0};
@@ -143,8 +149,6 @@ let mouseIsDown = false;
 let currentColor = "#000000";
 
 let currentRotation = 0;
-
-
 
 
 function createLine(startX: number, startY: number, thickness: number, color: string): DrawObject {
@@ -170,8 +174,6 @@ function createLine(startX: number, startY: number, thickness: number, color: st
     }
 }
 
-
-
 function createToolPreview(
     x: number, y: number, thickness: number, color:string): ToolPreview {
     return {
@@ -196,9 +198,6 @@ function createStickerPreview(x: number,y: number, sticker: string, rotation:num
       },
     };
 }
-
-
-
 
 function createSticker(startX: number,startY: number,sticker: string, rotation:number): DrawObject {
     let x = startX;
@@ -262,7 +261,6 @@ triggerStickerPrompt.addEventListener("click", () => {
             addStickerButtons(stickerPrompt);
         }
     }
-
     
 });
 
@@ -278,10 +276,6 @@ function addStickerButtons(stickerPrompt: string) {
     });
     stickerContainer.append(stickerButton);
 }
-
-
-
-
 
 
 colorPicker.addEventListener("input", (e) => {
@@ -372,9 +366,12 @@ button.addEventListener("click", () => {
 
 undoButton.addEventListener("click", () => {
     if (lines.length > 0) {
-        undoStack.push(lines.pop());
-        const event = new Event("drawing-changed");
-        canvas.dispatchEvent(event);
+        const lastLine = lines.pop();
+        if (lastLine) {
+            undoStack.push();
+            const event = new Event("drawing-changed");
+            canvas.dispatchEvent(event);
+        }
     }
 })
 
@@ -388,10 +385,10 @@ redoButton.addEventListener("click", () => {
 
 exportButton.addEventListener("click", () => {
 
-    let tempCanvas = document.createElement("canvas")
+    const tempCanvas = document.createElement("canvas")
     tempCanvas.width = 1024
     tempCanvas.height = 1024;
-    let tempCtx = tempCanvas.getContext("2d");
+    const tempCtx = tempCanvas.getContext("2d");
     tempCtx?.scale(4,4);
     tempCtx?.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
     lines.forEach((line) => {
